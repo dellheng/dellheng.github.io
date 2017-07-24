@@ -1,0 +1,345 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>just code it › 阿里云centos安装svn和submin</title>
+  <meta name="author" content="zhangheng">
+  
+  <meta name="description" content="概述没有找到可以让团队方便使用的云盘，暂时搭建一个svn凑合用一下
+svn有三种安装方式
+安装方式                 | 服务程序             | 服务协议           |  用户和密码                    | 授权                | 系统配置
+————–         | ————-        | ————  |———————      | ————–    |———-
+svn独立安装              |  svnserve          |  svn            |   passwd文件(明文密码)        | authz文件            | svnserve.conf文件
+apache+svn安装          |  httpd             |  http WebDAV  |   htpasswd命令(密文密码)    | authz文件            | httpd.conf文件
+apache+svn+submin     |  httpd+ pythonCGI |  http WebDAV  |    WebUI(sqlite3)            | WebUI(authz文件)    | submin2-admin命令">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="阿里云centos安装svn和submin"/>
+  <meta property="og:site_name" content="just code it"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="just code it" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-61760358-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+
+
+<body>
+  <header id="header"><div class="meta inner">
+  <h1><a href="/">just code it</a></h1>
+  <h2 id="header-h2">开启新的旅程</h2>
+  <nav id="main-nav">
+    <ul>
+      
+      <li><a href="/">首页</a></li>
+      
+    </ul>
+    <div class="clearfix"></div>
+  </nav>
+</div>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  <div class="post-content">
+    <header>
+      
+  
+    <h1 class="title">阿里云centos安装svn和submin</h1>
+  
+
+      
+      <time datetime="2015-07-24T16:00:00.000Z">2015-07-25</time>
+      
+    </header>
+    <div class="entry">
+      
+        <h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>没有找到可以让团队方便使用的云盘，暂时搭建一个svn凑合用一下</p>
+<p>svn有三种安装方式</p>
+<p>安装方式                 | 服务程序             | 服务协议           |  用户和密码                    | 授权                | 系统配置</p>
+<p>————–         | ————-        | ————  |———————      | ————–    |———-</p>
+<p>svn独立安装              |  svnserve          |  svn            |   passwd文件(明文密码)        | authz文件            | svnserve.conf文件</p>
+<p>apache+svn安装          |  httpd             |  http WebDAV  |   htpasswd命令(密文密码)    | authz文件            | httpd.conf文件</p>
+<p>apache+svn+submin     |  httpd+ pythonCGI |  http WebDAV  |    WebUI(sqlite3)            | WebUI(authz文件)    | submin2-admin命令</p>
+<a id="more"></a>
+<h1 id="安装apache"><a href="#安装apache" class="headerlink" title="安装apache"></a>安装apache</h1><ol>
+<li>检查apache是否安装</li>
+</ol>
+<pre><code>rpm -qa|grep httpd
+</code></pre><ol>
+<li><p>使用yum安装apache</p>
+<p>yum -y install httpd</p>
+</li>
+<li><p>记住安装的版本号</p>
+<p>  httpd.x86_64 0:2.4.6-31.el7.centos</p>
+</li>
+<li><p>启动apache测试apache是否可用</p>
+<p>注意：在centos7中使用systemctl替换了service</p>
+<pre><code>systemctl start httpd.service
+
+systemctl status httpd.service
+</code></pre></li>
+</ol>
+<p>浏览器输入IP查看是否能显示以下页面</p>
+<p><img src="/img/submin/apache-test.png" width="500" height="300"></p>
+<ol>
+<li><p>apache安装路径</p>
+<p> /etc/httpd</p>
+</li>
+</ol>
+<h1 id="安装SVN"><a href="#安装SVN" class="headerlink" title="安装SVN"></a>安装SVN</h1><ol>
+<li><p>检查svn是否安装</p>
+<p>rpm -qa|grep subversion</p>
+</li>
+</ol>
+<p>阿里云已经安装了svn，如果没有安装使用 yum install subversion 命令安装</p>
+<ol>
+<li>使用命令查看版本</li>
+</ol>
+<pre><code>svnserve --version
+</code></pre><p>   记住版本号svnserve，版本 1.7.14 (r1542130)</p>
+<ol>
+<li><p>安装apache对svn的支持模块</p>
+<p>yum install mod_dav_svn</p>
+<pre><code>#安装完成后apache的modules目录下会多两个文件
+
+mod_authz_svn.so
+
+mod_dav_svn.so    
+</code></pre></li>
+<li><p>安装python对svn的支持</p>
+<p>yum install subversion-python</p>
+</li>
+</ol>
+<h1 id="安装submin"><a href="#安装submin" class="headerlink" title="安装submin"></a>安装submin</h1><p>可以参照 <a href="https://ssl.supermind.nl/collab/projects/submin/browser/INSTALL" target="_blank" rel="external">https://ssl.supermind.nl/collab/projects/submin/browser/INSTALL</a></p>
+<ol>
+<li><p>submin依赖</p>
+<blockquote>
+<ol>
+<li><p>If you want subversion, you also need apache. If only git is needed, you can also install nginx.</p>
+</li>
+<li><p>Python 2.x    Python 2.7 preferred, but 2.6 should work,使用python –version查看python 版本</p>
+</li>
+<li><p>Subversion</p>
+</li>
+</ol>
+</blockquote>
+</li>
+</ol>
+<ol>
+<li><p>下载最新版本 <a href="http://supermind.nl/submin/current/submin-2.2.1-1.tar.gz" target="_blank" rel="external">http://supermind.nl/submin/current/submin-2.2.1-1.tar.gz</a></p>
+</li>
+<li><p>上传到服务器 sftp</p>
+</li>
+<li><p>解压文件 </p>
+</li>
+</ol>
+<pre><code>tar -xzvf submin-2.2.1-1.tar.gz
+</code></pre><ol>
+<li>安装</li>
+</ol>
+<pre><code>cd submin-2.2.1-1/
+
+        python setup.py install
+</code></pre><ol>
+<li><p>验证安装 </p>
+<p> 执行 submin2-admin 成功显示当前版本</p>
+</li>
+</ol>
+<ol>
+<li>配置submin</li>
+</ol>
+<pre><code>submin2-admin /opt/submin/ initenv your@email.address
+</code></pre><p>   邮箱很重要， submin会将管理员设置初始口令的链接发到这邮箱中</p>
+<p>   /opt/submin这个目录不要提前建，安装命令的向导一步步设置就可以了，说明很清楚.</p>
+<p>   这一步需要注意</p>
+<blockquote>
+<p>Please provide a location for the Subversion repositories. For new Subversion</p>
+</blockquote>
+<p>repositories, the default setting is ok. If the path is not absolute, it will</p>
+<p>be relative to the submin environment. If you want to use an existing</p>
+<p>repository, please provide the full pathname to the Subversion parent</p>
+<p>directory (ie. /var/lib/svn).</p>
+<pre><code>Path to the repository? [svn]&gt;
+</code></pre><p>​    </p>
+<p>这个目录我设置的时 /opt/svn,注意这个目录apache一定要有写权限,否则会报以下错误</p>
+<blockquote>
+<p>E165002 /opt/svn is an existing repository</p>
+</blockquote>
+<p>​    </p>
+<p>因为submin是用apache用户启动的，最简单的方式是将该目录所有者设置为apache，执行以下命令</p>
+<p>​        </p>
+<pre><code>chown apache:apache  /opt/svn/
+</code></pre><ol>
+<li><p>配置apache</p>
+<p> 生成配置文件 </p>
+</li>
+</ol>
+<pre><code>    submin2-admin /opt/submin/ apacheconf create all
+
+
+
+建立软链接配置apache,注意Apache版本
+
+
+
+    ln -s /opt/submin/conf/apache-2.4-webui-cgi.conf /etc/httpd/conf.d/
+
+    ln -s /opt/submin/conf/apache-2.4-svn.conf /etc/httpd/conf.d/
+</code></pre><ol>
+<li>重启apache</li>
+</ol>
+<pre><code>systemctl restart httpd.service
+</code></pre><p>   报错 Can’t load driver file apr_dbd_sqlite3.so</p>
+<p>   submin2默认需要sqlite3做数据库</p>
+<pre><code>    yum -y install apr-util-sqlite apr-util
+
+再次重启OK
+</code></pre><p>​    </p>
+<h1 id="邮箱设置"><a href="#邮箱设置" class="headerlink" title="邮箱设置"></a>邮箱设置</h1><ol>
+<li>配置 submin时,需要配置管理员邮箱</li>
+<li><p>/usr/lib/python2.7/site-packages/submin/email/fallback.py</p>
+<p>def sendmail(sender, receiver, message):</p>
+</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">msg_e = message.encode(&apos;utf-8&apos;)</div><div class="line">try:</div><div class="line">        smtp.send(sender, receiver, msg_e)</div><div class="line">except SendEmailError:</div><div class="line">        # this can still raise SendEmailError</div><div class="line">        local.send(sender, receiver, msg_e)</div></pre></td></tr></table></figure>
+<p>   优先使用stmp发邮件。 异常时使用本地的sendmail,配置smtp</p>
+<pre><code>   submin2-admin /opt/submin  config set smtp_hostname  smtp.exmail.qq.com
+
+submin2-admin /opt/submin  config set smtp_port 25
+
+submin2-admin /opt/submin  config set smtp_username svn@xxxxx.com
+
+submin2-admin /opt/submin  config set smtp_password  xxxxxx
+
+submin2-admin /opt/submin  config set smtp_from &quot;svn &lt;svn@xxxx.com&gt;&quot;
+
+submin2-admin /opt/submin  config set commit_email_from &quot;svn &lt;svn@xxxx.com&gt;&quot;
+</code></pre><h1 id="诊断submin"><a href="#诊断submin" class="headerlink" title="诊断submin"></a>诊断submin</h1><p>执行以下命令</p>
+<pre><code>submin2-admin /opt/submin/ diagnostics
+</code></pre><p>如果有问题参照说明修改对应错误</p>
+<p>我设置出现了以下问题：</p>
+<blockquote>
+<p>To disable, run the following command: submin2-admin /opt/submin config set vcs_plugins svn</p>
+</blockquote>
+<p>如果不禁用git，以后的操作都会报git没有设置的错误</p>
+<h1 id="管理员重置密码"><a href="#管理员重置密码" class="headerlink" title="管理员重置密码"></a>管理员重置密码</h1><ol>
+<li>访问系统进入登录界面</li>
+</ol>
+<p><img src="/img/submin/submin-login.png" width="300" height="200"></p>
+<ol>
+<li>点击forgot your password</li>
+</ol>
+<p><img src="/img/submin/admin-reset.png" width="200" height="150"></p>
+<p>输入admin，点击重置,以下命令配置的邮箱将会受到密码重置邮件</p>
+<pre><code>submin2-admin /opt/submin/ initenv your@email.address
+</code></pre><p>​        </p>
+<ol>
+<li>点击重置邮件进入系统,点击admin菜单进入用户设置界面，修改密码</li>
+</ol>
+<p><img src="/img/submin/admin-change-password.png" width="400" height="200"></p>
+<h1 id="新建仓库sharing"><a href="#新建仓库sharing" class="headerlink" title="新建仓库sharing"></a>新建仓库sharing</h1><ol>
+<li>点击左侧菜单右下角的新建仓库按钮</li>
+</ol>
+<p><img src="/img/submin/new-repo.png" width="120" height="100"></p>
+<ol>
+<li>进入新建页面</li>
+</ol>
+<p><img src="/img/submin/new-repo2.png" width="300" height="150"></p>
+<p>输入名称，选择svn创建仓库</p>
+<h1 id="授权"><a href="#授权" class="headerlink" title="授权"></a>授权</h1><ol>
+<li><p>点击左侧菜单最下面中间两个人的按钮，新建组</p>
+<p><img src="/img/submin/new-group.png" width="300" height="150"></p>
+</li>
+<li><p>点击左侧菜单最下面的左侧一个人的按钮，新建用户</p>
+</li>
+</ol>
+<pre><code>&lt;img src=&quot;/img/submin/new-user.png&quot; width=&quot;300&quot; height=&quot;150&quot;/&gt;
+</code></pre><ol>
+<li><p>新建完成用户后，用户会收到密码重置邮件，同时系统进入修改用户信息页面，可以将用户添加到developer组</p>
+<p><img src="/img/submin/add-member.png" width="200" height="100"></p>
+</li>
+</ol>
+<ol>
+<li>设置权限，点击左侧需要授权的仓库按钮</li>
+</ol>
+<pre><code>&lt;img src=&quot;/img/submin/set-permission.png&quot; width=&quot;500&quot; height=&quot;300&quot;/&gt;
+</code></pre><p>   针对特定的路径设置组或用户并设置对应的读写权限，这里我给developer设置root的读写权限</p>
+<ol>
+<li>使用浏览器访问svn地址测试</li>
+</ol>
+
+      
+    </div>
+    
+    <footer>
+      <div class="alignleft">
+      
+      
+      </div>
+      <div class="clearfix"></div>
+    </footer>
+    
+  </div>
+</article>
+
+
+<section id="comment">
+  
+            <!-- Duoshuo Comment BEGIN -->
+            <div class="ds-thread"></div>
+            <script type="text/javascript">
+                var duoshuoQuery = {short_name:"hengdev"};
+                (function() {
+                    var ds = document.createElement('script');
+                    ds.type = 'text/javascript';ds.async = true;
+                    ds.src = 'http://static.duoshuo.com/embed.js';
+                    ds.charset = 'UTF-8';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(ds);
+                })();
+            </script>
+            <!-- Duoshuo Comment END -->
+      
+  
+</section>
+
+</div></div>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer"><div class="inner"><div class="alignleft">
+  <p>
+  
+    &copy; 2017 zhangheng
+  
+  </p>
+  <p>
+    Theme By <a href="http://googleyixia.com" >Byron</a> based on <a href="https://github.com/willerce/hexo-theme-noderce" >Noderce</a>
+  </p>
+
+</div>
+<div class="clearfix"></div></div></footer>
+  <script type="text/javascript">
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,207 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>just code it › 使用travis-ci自动部署hexo到github-page</title>
+  <meta name="author" content="zhangheng">
+  
+  <meta name="description" content="#概述参照hexo作者的blog http://zespia.tw/blog/2015/01/21/continuous-deployment-to-github-with-travis/hexo官网就是采用该方案
+#生成key
+$ ssh-keygen -t rsa -C &amp;quot;mrheng@163.com&amp;quot;
+Generating public/private rsa key pair.
+Enter file in which to save the key (~/.ssh/id_rsa): ~/blog/oumind/.travis/ssh_key
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in ~/blog/oumind/.travis/ssh_key.
+Your public key has been saved in ~/blog/oumind/.travis/ssh_key.pub.
+#github设置deploy key
+
+#travis添加项目">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="使用travis-ci自动部署hexo到github-page"/>
+  <meta property="og:site_name" content="just code it"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="just code it" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-61760358-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+
+
+<body>
+  <header id="header"><div class="meta inner">
+  <h1><a href="/">just code it</a></h1>
+  <h2 id="header-h2">开启新的旅程</h2>
+  <nav id="main-nav">
+    <ul>
+      
+      <li><a href="/">首页</a></li>
+      
+    </ul>
+    <div class="clearfix"></div>
+  </nav>
+</div>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  <div class="post-content">
+    <header>
+      
+  
+    <h1 class="title">使用travis-ci自动部署hexo到github-page</h1>
+  
+
+      
+      <time datetime="2015-04-23T16:00:00.000Z">2015-04-24</time>
+      
+    </header>
+    <div class="entry">
+      
+        <p>#概述<br>参照hexo作者的blog <a href="http://zespia.tw/blog/2015/01/21/continuous-deployment-to-github-with-travis/" target="_blank" rel="external">http://zespia.tw/blog/2015/01/21/continuous-deployment-to-github-with-travis/</a><br>hexo官网就是采用该方案</p>
+<p>#生成key</p>
+<pre><code>$ ssh-keygen -t rsa -C &quot;mrheng@163.com&quot;
+Generating public/private rsa key pair.
+Enter file in which to save the key (~/.ssh/id_rsa): ~/blog/oumind/.travis/ssh_key
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in ~/blog/oumind/.travis/ssh_key.
+Your public key has been saved in ~/blog/oumind/.travis/ssh_key.pub.
+</code></pre><p>#github设置deploy key</p>
+<p><img src="/img/travis/github-deploy-keys.png" width="600" height="400"></p>
+<p>#travis添加项目<br><img src="/img/travis/travis-add-project.png" width="600" height="400"></p>
+<a id="more"></a>
+<p>#加密私有key</p>
+<p>注意：官网这一段话 <a href="http://docs.travis-ci.com/user/encrypting-files/" target="_blank" rel="external">http://docs.travis-ci.com/user/encrypting-files/</a><br>​    </p>
+<pre><code>&gt;Caveat
+
+There is a report of this function not working on a local Windows machine. Please use a Linux or OS X machine.
+</code></pre><p>本人亲测，在windows上加密密钥的确有问题,花了半天时间啊，杯具</p>
+<ol>
+<li>安装Travis CI Client<br>参照 <a href="https://github.com/travis-ci/travis.rb#installation" target="_blank" rel="external">https://github.com/travis-ci/travis.rb#installation</a></li>
+</ol>
+<p>Make sure you have at least <a href="http://www.ruby-lang.org/en/downloads/" target="_blank" rel="external">Ruby</a> 1.9.3 (2.0.0 recommended) installed.</p>
+<p>You can check your Ruby version by running <code>ruby -v</code>:</p>
+<pre><code>$ ruby -v
+ruby 2.0.0p195 (2013-05-14 revision 40734) [x86_64-darwin12.3.0]
+</code></pre><p>Then run:</p>
+<pre><code>$ gem install travis -v 1.7.6 --no-rdoc --no-ri
+</code></pre><p>墙内用户请设置淘宝的gem镜像 参照 <a href="http://ruby.taobao.org/" target="_blank" rel="external">http://ruby.taobao.org/</a></p>
+<p>Now make sure everything is working:</p>
+<pre><code>$ travis version
+1.7.6 
+</code></pre><ol>
+<li><p>登录travis</p>
+<p>travis login –auto</p>
+</li>
+</ol>
+<p>Try running with –github-token or –auto if you don’t want to enter your password anyway.</p>
+<p>注意： 执行travis命令最好在git仓库目录下，否则每次要用-r参数指定仓库，比较麻烦</p>
+<ol>
+<li><p>加密文件</p>
+<p>$ travis encrypt-file .travis/ssh_key .travis/ssh_key.enc</p>
+<pre><code>encrypting .travis/ssh_key for oumind/oumind
+storing result as .travis/ssh_key.enc
+DANGER ZONE: Override existing .travis/ssh_key.enc? |no| yes
+storing secure env variables for decryption
+
+Please add the following to your build script (before_install stage in your .travis.yml, for instance):
+
+    openssl aes-256-cbc -K $encrypted_28b0d322b02e_key -iv $encrypted_28b0d322b02e_iv -in .travis/ssh_key.enc -out .travis/ssh_key -d
+
+Pro Tip: You can add it automatically by running with --add.
+
+Make sure to add .travis/ssh_key.enc to the git repository.
+Make sure not to add .travis/ssh_key to the git repository.
+Commit all changes to your .travis.yml. 
+</code></pre></li>
+<li><p>确认travis环境变量</p>
+<p>$ travis env list</p>
+<pre><code># environment variables for oumind/oumind
+encrypted_28b0d322b02e_key=[secure]
+encrypted_28b0d322b02e_iv=[secure]
+</code></pre></li>
+<li><p>将生成的公私钥移到其他目录备份</p>
+</li>
+</ol>
+<p>#修改.travis.yml<br>配置文件参照 <a href="https://github.com/hexojs/site/blob/master/.travis.yml" target="_blank" rel="external">https://github.com/hexojs/site/blob/master/.travis.yml</a><br>修改openssl 环境变量部分,你也可以参照我们的<br><a href="https://github.com/oumind/oumind/blob/master/.travis.yml" target="_blank" rel="external">https://github.com/oumind/oumind/blob/master/.travis.yml</a></p>
+<p>#修改hexo的_config.yml</p>
+<p>参照官方文档 <a href="http://hexo.io/docs/deployment.html" target="_blank" rel="external">http://hexo.io/docs/deployment.html</a></p>
+<p>#push到github</p>
+<p>travis会自动构建并发布</p>
+
+      
+    </div>
+    
+    <footer>
+      <div class="alignleft">
+      
+      
+      </div>
+      <div class="clearfix"></div>
+    </footer>
+    
+  </div>
+</article>
+
+
+<section id="comment">
+  
+            <!-- Duoshuo Comment BEGIN -->
+            <div class="ds-thread"></div>
+            <script type="text/javascript">
+                var duoshuoQuery = {short_name:"hengdev"};
+                (function() {
+                    var ds = document.createElement('script');
+                    ds.type = 'text/javascript';ds.async = true;
+                    ds.src = 'http://static.duoshuo.com/embed.js';
+                    ds.charset = 'UTF-8';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(ds);
+                })();
+            </script>
+            <!-- Duoshuo Comment END -->
+      
+  
+</section>
+
+</div></div>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer"><div class="inner"><div class="alignleft">
+  <p>
+  
+    &copy; 2017 zhangheng
+  
+  </p>
+  <p>
+    Theme By <a href="http://googleyixia.com" >Byron</a> based on <a href="https://github.com/willerce/hexo-theme-noderce" >Noderce</a>
+  </p>
+
+</div>
+<div class="clearfix"></div></div></footer>
+  <script type="text/javascript">
+
+</script>
+
+</body>
+</html>
